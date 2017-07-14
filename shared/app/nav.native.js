@@ -9,7 +9,7 @@ import {Box, NativeKeyboard, NativeKeyboardAvoidingView} from '../common-adapter
 import {Dimensions, StatusBar} from 'react-native'
 import {NavigationActions} from 'react-navigation'
 import CardStackTransitioner from 'react-navigation/src/views/CardStackTransitioner'
-import {chatTab, loginTab} from '../constants/tabs'
+import {chatTab, loginTab, profileTab, folderTab, settingsTab} from '../constants/tabs'
 import {connect} from 'react-redux'
 import {globalColors, globalStyles, statusBarHeight} from '../styles/index.native'
 import {isAndroid, isIOS} from '../constants/platform'
@@ -149,31 +149,41 @@ const forAndroid = ({hideNav, content, tabBar}) => (
   </Box>
 )
 
+tabIsCached = {
+  [profileTab]: true,
+  [folderTab]: true,
+  [chatTab]: true,
+  [settingsTab]: true,
+}
+
 class MainNavStack extends Component {
-  constructor(props) {
-    super(props)
-    this.state = {
-      stackCache: Map({[props.routeSelected]: props.routeStack}),
-    }
+  state = {
+    stackCache: Map(),
   }
 
-  componentWillReceiveProps({routeSelected, routeStack}) {
-    this.setState(({stackCache}) => ({stackCache: stackCache.set(routeSelected, routeStack)}))
+  componentWillReceiveProps() {
+    const {routeSelected, routeStack} = this.props
+    if (tabIsCached[routeSelected]) {
+      this.setState(({stackCache}) => ({stackCache: stackCache.set(routeSelected, routeStack)}))
+    }
   }
 
   render() {
     const props = this.props
     const {stackCache} = this.state
 
-    const stacks = stackCache.map((stack, key) =>
-      <CardStackShim
-        key={key}
-        hidden={key !== props.routeSelected}
-        stack={stack}
-        renderRoute={renderStackRoute}
-        onNavigateBack={props.navigateUp}
-      />
-    )
+    const stacks = stackCache
+      .set(props.routeSelected, props.routeStack)
+      .map((stack, key) =>
+        <CardStackShim
+          key={key}
+          hidden={key !== props.routeSelected}
+          stack={stack}
+          renderRoute={renderStackRoute}
+          onNavigateBack={props.navigateUp}
+        />
+      )
+      .toArray()
 
     const content = (
       <Box style={{height: '100%'}}>
